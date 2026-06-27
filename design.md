@@ -1,5 +1,6 @@
 # uFawkesSec — Design v0.2
-*Security Plane of the Fawkes IDP Family*
+
+_Security Plane of the Fawkes IDP Family_
 
 **Status:** Draft — 2026-06-23
 **Depends on:** sec-specification.md v0.2, uFawkesPipe design.md v0.2
@@ -116,9 +117,8 @@ explicitly allow the `falco` service by name.
 # Run: make network && make up
 
 services:
-
   defectdojo:
-    image: defectdojo/defectdojo-django:2.38.0   # VERIFY tag before use
+    image: defectdojo/defectdojo-django:2.38.0 # VERIFY tag before use
     container_name: defectdojo
     environment:
       DD_DATABASE_URL: postgresql://dojo:${DOJO_DB_PASSWORD}@postgres:5432/dojo
@@ -141,7 +141,7 @@ services:
       retries: 5
 
   defectdojo-nginx:
-    image: defectdojo/defectdojo-nginx:2.38.0   # VERIFY tag before use
+    image: defectdojo/defectdojo-nginx:2.38.0 # VERIFY tag before use
     container_name: defectdojo-nginx
     ports:
       - "8080:8080"
@@ -187,7 +187,7 @@ services:
       retries: 3
 
   infisical:
-    image: infisical/infisical:v0.93.1   # VERIFY tag; Infisical releases frequently
+    image: infisical/infisical:v0.93.1 # VERIFY tag; Infisical releases frequently
     container_name: infisical
     environment:
       ENCRYPTION_KEY_FILE: /run/secrets/infisical_encryption_key
@@ -226,7 +226,7 @@ services:
   falco:
     # privileged: true is a documented exception — required for eBPF probe loading.
     # Exception is encoded in policy/no-privileged.rego allow-list.
-    image: falcosecurity/falco-no-driver:0.39.2   # VERIFY tag
+    image: falcosecurity/falco-no-driver:0.39.2 # VERIFY tag
     container_name: falco
     privileged: true
     volumes:
@@ -268,6 +268,7 @@ writing secret values to files and using the `file:` syntax instead.
 uFawkesPipe's `policy-check` step must consume Rego policies from uFawkesSec. Two options:
 
 **Option A — Git clone at pipeline time (recommended for v0.2):**
+
 ```yaml
 - name: policy-check
   image: openpolicyagent/conftest:v0.57.0
@@ -276,6 +277,7 @@ uFawkesPipe's `policy-check` step must consume Rego policies from uFawkesSec. Tw
     - git clone --depth 1 https://github.com/paruff/uFawkesSec /tmp/sec
     - conftest test --policy /tmp/sec/policy/ compose.yaml .pipeline.yml
 ```
+
 Simple. No artifact publishing required. Adds ~10s to pipeline. Relies on GitHub availability.
 
 **Option B — Policy bundle as OCI artifact (v0.3):**
@@ -304,7 +306,7 @@ The `sign-image` step in uFawkesPipe:
 
 ```yaml
 - name: sign-image
-  image: bitnami/cosign:2.4.1   # VERIFY tag
+  image: bitnami/cosign:2.4.1 # VERIFY tag
   environment:
     COSIGN_PRIVATE_KEY:
       from_secret: cosign_private_key
@@ -312,8 +314,8 @@ The `sign-image` step in uFawkesPipe:
       from_secret: cosign_password
   commands:
     - cosign sign --key env://COSIGN_PRIVATE_KEY
-        --yes
-        ${REGISTRY_USERNAME}/${CI_REPO_NAME}:${CI_COMMIT_SHA:0:7}
+      --yes
+      ${REGISTRY_USERNAME}/${CI_REPO_NAME}:${CI_COMMIT_SHA:0:7}
   when:
     - branch: main
 ```
@@ -329,7 +331,7 @@ https://hub.docker.com/r/bitnami/cosign before implementing SEC-002.
 ```yaml
 # Minimal Falco config for uFawkesSec v0.2
 rules_file:
-  - /etc/falco/falco_rules.yaml          # built-in default rules
+  - /etc/falco/falco_rules.yaml # built-in default rules
 
 json_output: true
 json_include_output_property: true
@@ -339,8 +341,8 @@ stdout_output:
 
 http_output:
   enabled: true
-  url: "${FALCO_WEBHOOK_URL}"            # empty string disables this safely
-  insecure: true                         # acceptable for internal fawkes-net
+  url: "${FALCO_WEBHOOK_URL}" # empty string disables this safely
+  insecure: true # acceptable for internal fawkes-net
 
 log_level: info
 ```
@@ -355,27 +357,27 @@ Extend the existing Makefile with:
 .PHONY: up down network logs-defectdojo logs-falco
 
 network: ## Create fawkes-net if it does not exist
-	docker network create fawkes-net || true
+ docker network create fawkes-net || true
 
 up: network ## Start uFawkesSec stack (requires uFawkesRes running)
-	docker compose up -d
-	@echo "DefectDojo: http://localhost:8080"
-	@echo "Infisical:  http://localhost:8082"
+ docker compose up -d
+ @echo "DefectDojo: http://localhost:8080"
+ @echo "Infisical:  http://localhost:8082"
 
 down: ## Stop uFawkesSec stack
-	docker compose down
+ docker compose down
 
 logs-defectdojo: ## Tail DefectDojo logs
-	docker compose logs -f defectdojo defectdojo-nginx
+ docker compose logs -f defectdojo defectdojo-nginx
 
 logs-falco: ## Tail Falco security events
-	docker compose logs -f falco
+ docker compose logs -f falco
 
 cosign-keygen: ## Generate Cosign key pair (run once; store private key in Woodpecker secret)
-	cosign generate-key-pair
-	@echo "Store cosign.key in Woodpecker secret 'cosign_private_key'"
-	@echo "Commit cosign.pub to the repo"
-	@rm -f cosign.key  # do not leave the private key on disk
+ cosign generate-key-pair
+ @echo "Store cosign.key in Woodpecker secret 'cosign_private_key'"
+ @echo "Commit cosign.pub to the repo"
+ @rm -f cosign.key  # do not leave the private key on disk
 ```
 
 ---
@@ -385,6 +387,7 @@ cosign-keygen: ## Generate Cosign key pair (run once; store private key in Woodp
 ### 8.1 `tests/unit/test_compose_yaml.py` (new)
 
 Parse `compose.yaml` with `pyyaml`. Assert:
+
 - All 7 expected service names present
 - `fawkes-net` declared as external network
 - `defectdojo` and `infisical` have `healthcheck` blocks
@@ -396,6 +399,7 @@ Parse `compose.yaml` with `pyyaml`. Assert:
 
 Use Python `subprocess` to call `conftest test --policy policy/ --no-color <fixture>`.
 Provide fixture YAML files in `tests/fixtures/`:
+
 - `compose-clean.yaml` — passes all policies
 - `compose-privileged.yaml` — has a non-Falco privileged container; assert conftest exits non-zero
 - `compose-host-network.yaml` — has `network_mode: host`; assert conftest exits non-zero
@@ -415,11 +419,11 @@ new tests, read what exists to avoid duplication.
 
 ## 9. Risks and Mitigations
 
-| Risk | Likelihood | Mitigation |
-|---|---|---|
-| DefectDojo's Celery broker requires Redis protocol — Valkey is Redis-compatible but version matters | Medium | Test with `valkey-cli ping` from defectdojo-celery-worker before calling it working |
-| Infisical v0.93.1 `ENV_FILE` secret injection syntax may differ from shown | High | Read Infisical compose docs at https://infisical.com/docs/self-hosting/deployment-options/docker-compose before SEC-004 |
-| Falco eBPF probe fails to load on kernel < 4.14 or on macOS Docker Desktop | High | Document host kernel requirement in `docs/quickstart.md`; provide fallback Falco config with `--driver none` for local dev (rules still load, syscall capture disabled) |
-| Policy git clone in pipeline adds GitHub as a dependency of every build | Medium | Cache with Woodpecker's workspace or switch to Option B (OCI bundle) if pipeline becomes flaky |
-| `no-latest-tag.rego` policy must not block the Trivy server image | High | Add explicit allow-list in `no-latest-tag.rego` for `aquasec/trivy:latest`; covered in tests |
-| DefectDojo first-run requires database migration — `docker compose up` alone is not sufficient | High | Add `make migrate` target that runs `docker compose exec defectdojo python manage.py migrate`; document in quickstart |
+| Risk                                                                                                | Likelihood | Mitigation                                                                                                                                                              |
+| --------------------------------------------------------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| DefectDojo's Celery broker requires Redis protocol — Valkey is Redis-compatible but version matters | Medium     | Test with `valkey-cli ping` from defectdojo-celery-worker before calling it working                                                                                     |
+| Infisical v0.93.1 `ENV_FILE` secret injection syntax may differ from shown                          | High       | Read Infisical compose docs at https://infisical.com/docs/self-hosting/deployment-options/docker-compose before SEC-004                                                 |
+| Falco eBPF probe fails to load on kernel < 4.14 or on macOS Docker Desktop                          | High       | Document host kernel requirement in `docs/quickstart.md`; provide fallback Falco config with `--driver none` for local dev (rules still load, syscall capture disabled) |
+| Policy git clone in pipeline adds GitHub as a dependency of every build                             | Medium     | Cache with Woodpecker's workspace or switch to Option B (OCI bundle) if pipeline becomes flaky                                                                          |
+| `no-latest-tag.rego` policy must not block the Trivy server image                                   | High       | Add explicit allow-list in `no-latest-tag.rego` for `aquasec/trivy:latest`; covered in tests                                                                            |
+| DefectDojo first-run requires database migration — `docker compose up` alone is not sufficient      | High       | Add `make migrate` target that runs `docker compose exec defectdojo python manage.py migrate`; document in quickstart                                                   |
