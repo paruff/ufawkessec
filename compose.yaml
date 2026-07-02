@@ -10,7 +10,6 @@
 name: ufawkessec
 
 services:
-
   # ── DefectDojo Django (uWSGI) ───────────────────────────────────────────
   defectdojo:
     image: defectdojo/defectdojo-django:2.38.0

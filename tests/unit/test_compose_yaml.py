@@ -61,9 +61,7 @@ class TestServiceNames:
     def test_all_core_services_present(self, compose_data):
         services = set(compose_data.get("services", {}).keys())
         missing = CORE_SERVICES - services
-        assert not missing, (
-            f"Missing expected core services: {missing}"
-        )
+        assert not missing, f"Missing expected core services: {missing}"
 
     def test_no_unexpected_services(self, compose_data, compose_filename):
         """compose.yaml must only contain core services (standalone adds postgres+valkey)."""
@@ -73,9 +71,7 @@ class TestServiceNames:
         else:
             expected = CORE_SERVICES
         extra = services - expected
-        assert not extra, (
-            f"Unexpected services found: {extra}"
-        )
+        assert not extra, f"Unexpected services found: {extra}"
 
 
 # ── Network Assertions ────────────────────────────────────────────────────
@@ -164,7 +160,8 @@ class TestPrivileged:
     def test_no_other_service_is_privileged(self, compose_data):
         services = compose_data.get("services", {})
         privileged_services = [
-            name for name, config in services.items()
+            name
+            for name, config in services.items()
             if config.get("privileged") is True
         ]
         assert privileged_services == ["falco"], (
@@ -253,7 +250,9 @@ class TestExtraServicesStandalone:
         assert "valkey" in services, "standalone compose must include valkey"
         assert "volumes" in data, "standalone compose must have volumes"
         vol_names = set(data["volumes"].keys())
-        assert "postgres-data" in vol_names, "standalone compose needs postgres-data volume"
+        assert "postgres-data" in vol_names, (
+            "standalone compose needs postgres-data volume"
+        )
         assert "valkey-data" in vol_names, "standalone compose needs valkey-data volume"
 
     def test_postgres_healthcheck_in_standalone(self):

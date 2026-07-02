@@ -10,7 +10,6 @@
 name: ufawkessec-standalone
 
 services:
-
   # ── PostgreSQL (DefectDojo + Infisical database) ─────────────────────────
   postgres:
     image: postgres:18-alpine
