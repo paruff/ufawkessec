@@ -1,0 +1,50 @@
+version: "3.8"
+
+services:
+  webapp:
+    image: myorg/webapp:v1.2.3
+    user: "1000:1000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  db:
+    image: postgres:15-alpine
+    user: "999:999"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    user: "999:999"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # Falco is allowed to run privileged (explicit allow-list in no-privileged.rego)
+  falco:
+    image: falcosecurity/falco:0.36.0
+    privileged: true
+    user: "1001:1001"
+    healthcheck:
+      test: ["CMD", "falco", "--version"]
+      interval: 60s
+      timeout: 5s
+      retries: 2
+
+  # Trivy is allowed to use :latest tag (explicit allow-list in no-latest-tag.rego)
+  trivy:
+    image: aquasec/trivy:latest
+    user: "1000:1000"
+    healthcheck:
+      test: ["CMD", "trivy", "--version"]
+      interval: 60s
+      timeout: 5s
+      retries: 2

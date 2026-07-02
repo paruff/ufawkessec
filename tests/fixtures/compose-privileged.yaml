@@ -1,0 +1,12 @@
+version: "3.8"
+
+services:
+  webapp:
+    image: myorg/webapp:v1.2.3
+    user: "1000:1000"
+    privileged: true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
