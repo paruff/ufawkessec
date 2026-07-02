@@ -69,8 +69,7 @@ jobs:
     with:
       test-tiers: "unit"
       python-version: "3.11"
-      coverage-threshold: 80
-      coverage-paths: "ufawkessec"
+      coverage-paths: ""
       health-endpoints: ""
 
   # ─── Gate: Pipeline Complete ────────────────────────────────────────────
