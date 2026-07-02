@@ -7,6 +7,7 @@
 **Location:** `.github/workflows/ci-pipeline.yml`, line 52-60, `build` job
 
 **Evidence:**
+
 - PR #5 attempts to migrate local reusable workflows (`./.github/workflows/reusable-*.yml`) to centralized `paruff/ufawkespipe/.github/workflows/reusable-*.yml@v1.0.0` (later bumped to `@v1.1.0`)
 - The CI Pipeline workflow fails with `startup_failure` — no logs because the failure occurs at workflow parse/validation time, before any job runs
 - The `build` job passes `validate-docker-compose`, `validate-jcasc`, and `validate-k8s` inputs to `paruff/ufawkespipe/.github/workflows/reusable-build.yml@v1.1.0`
