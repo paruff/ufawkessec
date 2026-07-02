@@ -54,9 +54,10 @@ jobs:
     needs: [security, dependency-review]
     uses: paruff/ufawkespipe/.github/workflows/reusable-build.yml@v1.1.0
     with:
-      validate-docker-compose: false
-      validate-jcasc: false
-      validate-k8s: false
+      validate-prometheus: false
+      validate-otel: false
+      validate-tempo: false
+      validate-grafana: false
       fail-on-latest: true
 
   # ─── Stage 4: Tests ────────────────────────────────────────────────────
