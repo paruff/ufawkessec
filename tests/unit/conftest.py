@@ -1,8 +1,6 @@
 """Shared test fixtures for uFawkesSec unit tests."""
 
-import os
 import pytest
-import yaml
 from pathlib import Path
 
 
