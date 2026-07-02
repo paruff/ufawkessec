@@ -129,7 +129,7 @@ that are added to uFawkesPipe's `.woodpecker.yml` as part of this work:
 **Step: `sign-image`** (after `generate-sbom`)
 
 - Image: `bitnami/cosign:2.4.1`
-- Uses Woodpecker secrets: `cosign_private_key`, `cosign_password`
+- Uses Woodpecker secrets: `cosign_private_key`, `cosign_password` # pragma: allowlist secret
 - Command: `cosign sign --key env://COSIGN_PRIVATE_KEY <image-ref>`
 - Only runs on `branch: main`
 
@@ -230,7 +230,7 @@ supply-chain:
 1. `make up` starts all 7 services with no errors (requires uFawkesRes already running).
 2. DefectDojo is accessible at `http://localhost:8080` and accepts an authenticated API request.
 3. Infisical is accessible at `http://localhost:8082`.
-4. A push to uFawkesPipe on a repo with a planted secret: `secrets-scan` fails; DefectDojo receives the Gitleaks finding.
+4. A push to uFawkesPipe on a repo with a planted secret: `secrets-scan` fails; DefectDojo receives the Gitleaks finding. # pragma: allowlist secret
 5. A push on `main` with a clean codebase: `sign-image` succeeds; `cosign verify` on the pushed image confirms the signature.
 6. `conftest test --policy policy/ compose.yaml` passes with zero violations.
 7. Falco container is running and `docker logs falco` shows at least one syscall event line.
