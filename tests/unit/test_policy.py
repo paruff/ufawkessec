@@ -168,8 +168,10 @@ class TestAllowLists:
         """aquasec/trivy:latest is allowed (allow-list in no-latest-tag.rego)."""
         failures = run_conftest("compose-clean-suite.yaml")
         latest_trivy_failures = [
-            f for f in failures
-            if "latest" in f.get("msg", "").lower() and "trivy" in f.get("msg", "").lower()
+            f
+            for f in failures
+            if "latest" in f.get("msg", "").lower()
+            and "trivy" in f.get("msg", "").lower()
         ]
         assert len(latest_trivy_failures) == 0, (
             f"Trivy latest-tag allow-list broken; got violations: {latest_trivy_failures}"
@@ -198,7 +200,11 @@ class TestPolicySuite:
 
     def test_all_violation_fixtures_fail(self):
         """Each violation fixture must produce at least one failure."""
-        for fixture_name in ["compose-privileged.yaml", "compose-host-network.yaml", "compose-latest-tag.yaml"]:
+        for fixture_name in [
+            "compose-privileged.yaml",
+            "compose-host-network.yaml",
+            "compose-latest-tag.yaml",
+        ]:
             failures = run_conftest(fixture_name)
             assert len(failures) >= 1, (
                 f"Fixture '{fixture_name}' expected violations but got none"
@@ -213,7 +219,11 @@ class TestPolicySuite:
             "compose-host-network.yaml",
             "compose-latest-tag.yaml",
         }
-        actual_fixtures = {f.name for f in FIXTURES_DIR.glob("*.yaml") if f.is_file() and not f.name.startswith(".")}
+        actual_fixtures = {
+            f.name
+            for f in FIXTURES_DIR.glob("*.yaml")
+            if f.is_file() and not f.name.startswith(".")
+        }
         missing = expected_fixtures - actual_fixtures
         assert not missing, f"Missing fixture files: {missing}"
 
@@ -238,9 +248,7 @@ class TestPolicyCoverage:
             "no-root-user",
         }
         actual = {f.stem for f in policy_files}
-        assert actual == expected, (
-            f"Policy mismatch. Expected {expected}, got {actual}"
-        )
+        assert actual == expected, f"Policy mismatch. Expected {expected}, got {actual}"
 
 
 if __name__ == "__main__":
