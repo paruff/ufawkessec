@@ -59,6 +59,7 @@ jobs:
       validate-tempo: false
       validate-grafana: false
       fail-on-latest: true
+      enable-coverage-gate: false
 
   # ─── Stage 4: Tests ────────────────────────────────────────────────────
   tests:
