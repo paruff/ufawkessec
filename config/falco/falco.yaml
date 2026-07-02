@@ -1,0 +1,17 @@
+# Minimal Falco config for uFawkesSec v0.2
+# See https://falco.org/docs/reference/daemon/config/ for full reference
+rules_file:
+  - /etc/falco/falco_rules.yaml
+
+json_output: true
+json_include_output_property: true
+
+stdout_output:
+  enabled: true
+
+http_output:
+  enabled: true
+  url: "${FALCO_WEBHOOK_URL}"
+  insecure: true
+
+log_level: info
