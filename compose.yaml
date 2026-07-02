@@ -1,0 +1,169 @@
+# uFawkesSec compose.yaml — v0.2
+# Suite-aware: assumes uFawkesRes (postgres:5432, valkey:6379) on fawkes-net
+# Prerequisites:
+#   1. docker network create fawkes-net
+#   2. uFawkesRes running (postgres + valkey)
+#   3. Required env vars set (see config/defectdojo/.env.example, config/infisical/.env.example)
+# Run: docker compose up -d
+# Stop: docker compose down
+
+name: ufawkessec
+
+services:
+  # ── DefectDojo Django (uWSGI) ───────────────────────────────────────────
+  defectdojo:
+    image: defectdojo/defectdojo-django:2.38.0
+    container_name: defectdojo
+    environment:
+      DD_DATABASE_URL: postgresql://dojo:${DOJO_DB_PASSWORD}@postgres:5432/dojo
+      DD_CELERY_BROKER_URL: redis://valkey:6379/0
+      DD_SECRET_KEY_FILE: /run/secrets/defectdojo_secret_key
+      DD_CREDENTIAL_AES_256_KEY_FILE: /run/secrets/defectdojo_aes_key
+      DD_ALLOWED_HOSTS: "*"
+    secrets:
+      - defectdojo_secret_key
+      - defectdojo_aes_key
+    volumes:
+      - defectdojo-media:/app/media
+    depends_on:
+      defectdojo-celery-worker:
+        condition: service_started
+    networks:
+      - fawkes-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v2/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ── DefectDojo Nginx (reverse proxy) ─────────────────────────────────────
+  defectdojo-nginx:
+    image: defectdojo/defectdojo-nginx:2.38.0
+    container_name: defectdojo-nginx
+    ports:
+      - "8080:8080"
+    depends_on:
+      - defectdojo
+    networks:
+      - fawkes-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ── DefectDojo Celery Beat (scheduler) ──────────────────────────────────
+  defectdojo-celery-beat:
+    image: defectdojo/defectdojo-django:2.38.0
+    container_name: defectdojo-celery-beat
+    command: /entrypoint-celery-beat.sh
+    environment:
+      DD_DATABASE_URL: postgresql://dojo:${DOJO_DB_PASSWORD}@postgres:5432/dojo
+      DD_CELERY_BROKER_URL: redis://valkey:6379/0
+      DD_SECRET_KEY_FILE: /run/secrets/defectdojo_secret_key
+      DD_CREDENTIAL_AES_256_KEY_FILE: /run/secrets/defectdojo_aes_key
+    secrets:
+      - defectdojo_secret_key
+      - defectdojo_aes_key
+    networks:
+      - fawkes-net
+
+  # ── DefectDojo Celery Worker (async task processor) ──────────────────────
+  defectdojo-celery-worker:
+    image: defectdojo/defectdojo-django:2.38.0
+    container_name: defectdojo-celery-worker
+    command: /entrypoint-celery-worker.sh
+    environment:
+      DD_DATABASE_URL: postgresql://dojo:${DOJO_DB_PASSWORD}@postgres:5432/dojo
+      DD_CELERY_BROKER_URL: redis://valkey:6379/0
+      DD_SECRET_KEY_FILE: /run/secrets/defectdojo_secret_key
+      DD_CREDENTIAL_AES_256_KEY_FILE: /run/secrets/defectdojo_aes_key
+    secrets:
+      - defectdojo_secret_key
+      - defectdojo_aes_key
+    networks:
+      - fawkes-net
+    healthcheck:
+      test: ["CMD", "celery", "-A", "dojo", "inspect", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Infisical (secret management) ────────────────────────────────────────
+  infisical:
+    image: infisical/infisical:v0.93.1
+    container_name: infisical
+    environment:
+      ENCRYPTION_KEY_FILE: /run/secrets/infisical_encryption_key
+      AUTH_SECRET_FILE: /run/secrets/infisical_auth_secret
+      DB_CONNECTION_URI: postgresql://infisical:${INFISICAL_DB_PASSWORD}@postgres:5432/infisical
+      REDIS_URL: redis://valkey:6379/1
+    secrets:
+      - infisical_encryption_key
+      - infisical_auth_secret
+    ports:
+      - "8082:8080"
+    networks:
+      - fawkes-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/status"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ── Trivy Server (shared CVE cache for pipeline steps) ───────────────────
+  # aquasec/trivy:latest intentionally unpinned — needs current CVE database.
+  # Documented exception to pinned-image policy; allow-listed in no-latest-tag.rego.
+  trivy-server:
+    image: aquasec/trivy:latest
+    container_name: trivy-server
+    command: server --listen 0.0.0.0:4954
+    networks:
+      - fawkes-net
+    volumes:
+      - trivy-cache:/root/.cache/trivy
+    healthcheck:
+      test: ["CMD", "trivy", "health"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+
+  # ── Falco (runtime security monitoring) ──────────────────────────────────
+  # privileged: true is a documented exception — required for eBPF probe loading.
+  # Exception is encoded in policy/no-privileged.rego allow-list.
+  falco:
+    image: falcosecurity/falco-no-driver:0.39.2
+    container_name: falco
+    privileged: true
+    volumes:
+      - /proc:/host/proc:ro
+      - /dev:/host/dev:ro
+      - ./config/falco/falco.yaml:/etc/falco/falco.yaml:ro
+    environment:
+      FALCO_WEBHOOK_URL: ${FALCO_WEBHOOK_URL:-}
+    networks:
+      - fawkes-net
+
+# ── Secrets ─────────────────────────────────────────────────────────────────
+# Each secret is injected from a host environment variable at runtime.
+# Docker Compose v2.4+ required for secrets.*.environment syntax.
+secrets:
+  defectdojo_secret_key:
+    environment: DEFECTDOJO_SECRET_KEY
+  defectdojo_aes_key:
+    environment: DEFECTDOJO_AES_KEY
+  infisical_encryption_key:
+    environment: INFISICAL_ENCRYPTION_KEY
+  infisical_auth_secret:
+    environment: INFISICAL_AUTH_SECRET
+
+# ── Volumes ─────────────────────────────────────────────────────────────────
+volumes:
+  defectdojo-media:
+  trivy-cache:
+
+# ── Networks ────────────────────────────────────────────────────────────────
+networks:
+  fawkes-net:
+    external: true
+    name: fawkes-net
