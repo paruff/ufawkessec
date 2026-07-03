@@ -12,7 +12,7 @@ The core pattern in uFawkesSec policies follows a simple rule: **`deny contains 
 - `msg` contains the human-readable error message explaining the violation
 - Multiple `deny` rules can exist within a single policy file
 
-#### Worked Example: `no-privileged.rego`
+### Worked Example: `no-privileged.rego`
 
 ```rego
 package main
@@ -22,14 +22,15 @@ import rego.v1
 # Allow-list exception: falco is permitted to run privileged
 
 deny contains msg if {
-	some service in object.keys(input.services)
-	input.services[service].privileged == true
-	service != "falco"
-	msg := sprintf("Service '%s' must not run in privileged mode", [service])
+ some service in object.keys(input.services)
+ input.services[service].privileged == true
+ service != "falco"
+ msg := sprintf("Service '%s' must not run in privileged mode", [service])
 }
 ```
 
 **Breaking down the example:**
+
 1. `package main` — Declares this is a policy for uFawkesSec
 2. `import rego.v1` — Import Rego language features
 3. `deny contains msg if {` — Rule definition starts here
@@ -39,6 +40,7 @@ deny contains msg if {
 7. `msg := sprintf(...)` — Error message explaining the violation
 
 **Key Pattern:**
+
 - **Deny first, allow second** — Define violations first, then create allow-lists
 - **Use `sprintf()` for messages** — Provides consistent error formatting
 - **Check service membership** — `object.keys(input.services)` gives a list of service names from the YAML
@@ -66,18 +68,18 @@ input:
         retries: 5
 ```
 
-#### Available Input Fields
+### Available Input Fields
 
-| Field | Type | Example | Description |
-|-------|------|---------|-------------|
-| `input.services[service].image` | string | `"postgres:15-alpine"` | Docker image reference |
-| `input.services[service].ports` | array | `["5432:5432"]` | Published port mappings |
-| `input.services[service].user` | string | `"999:999"` | User:group specification (UID:GID) or name |
-| `input.services[service].privileged` | boolean | `true` or `false` | Privileged mode flag |
-| `input.services[service].network_mode` | string | `"bridge"` or `"host"` | Docker network mode |
-| `input.services[service].healthcheck` | object | see healthcheck structure below | Health check configuration |
+| Field                                  | Type    | Example                         | Description                                |
+| -------------------------------------- | ------- | ------------------------------- | ------------------------------------------ |
+| `input.services[service].image`        | string  | `"postgres:15-alpine"`          | Docker image reference                     |
+| `input.services[service].ports`        | array   | `["5432:5432"]`                 | Published port mappings                    |
+| `input.services[service].user`         | string  | `"999:999"`                     | User:group specification (UID:GID) or name |
+| `input.services[service].privileged`   | boolean | `true` or `false`               | Privileged mode flag                       |
+| `input.services[service].network_mode` | string  | `"bridge"` or `"host"`          | Docker network mode                        |
+| `input.services[service].healthcheck`  | object  | see healthcheck structure below | Health check configuration                 |
 
-#### Healthcheck Structure
+### Healthcheck Structure
 
 ```yaml
 healthcheck:
@@ -91,7 +93,7 @@ healthcheck:
 
 ## 3. Testing Policies Locally
 
-#### Basic Testing Command
+### Basic Testing Command
 
 Run Conftest against a fixture YAML file:
 
@@ -99,17 +101,17 @@ Run Conftest against a fixture YAML file:
 conftest test --policy policy/ tests/fixtures/compose-clean.yaml
 ```
 
-#### Example Fixture: `compose-clean.yaml`
+### Example Fixture: `compose-clean.yaml`
 
 The uFawkesSec policy test suite includes 5 fixture files:
 
 1. **`compose-clean.yaml`** — Compliant with all policies
 2. **`compose-privileged.yaml`** — Violates no-privileged policy (has a privileged service named "custom-privileged")
-3. **`compose-host-network.yaml`** — Violates no-host-network policy  
+3. **`compose-host-network.yaml`** — Violates no-host-network policy
 4. **`compose-latest-tag.yaml`** — Violates no-latest-tag policy (has multiple :latest images)
 5. **`compose-clean-suite.yaml`** — Suite containing all compliant services
 
-#### Running Policy Tests
+### Running Policy Tests
 
 ```bash
 # Run all policy tests in unit test suite
@@ -122,7 +124,7 @@ pytest tests/unit/test_policy.py::TestValidComposeStandalone
 conftest test --policy policy/ tests/fixtures/compose-clean.yaml
 ```
 
-#### Test Output Interpretation
+### Test Output Interpretation
 
 - **Exit Code 0** — All policies passed (success)
 - **Exit Code 1** — One or more policies violated (expected for negative test fixtures)
@@ -132,13 +134,14 @@ conftest test --policy policy/ tests/fixtures/compose-clean.yaml
 
 ## 4. Adding Exceptions to Policies
 
-#### Pattern: Allow-List Approach
+### Pattern: Allow-List Approach
 
 Instead of denying all violations, uFawkesSec policies use an allow-list approach for specific exceptions.
 
-#### Example: Adding "infisical" to no-privileged Policy
+### Example: Adding "infisical" to no-privileged Policy
 
 Original policy:
+
 ```rego
 package main
 
@@ -151,6 +154,7 @@ deny contains msg if {
 ```
 
 Enhanced policy with additional exception:
+
 ```rego
 package main
 
@@ -163,14 +167,14 @@ deny contains msg if {
 }
 ```
 
-#### Common Allow-Lists in Current Policies
+### Common Allow-Lists in Current Policies
 
-| Policy | Allowed Items | Rationale |
-|--------|--------------|-----------|
-| `no-privileged.rego` | `"falco"` | Required for eBPF security monitoring |
+| Policy               | Allowed Items            | Rationale                                             |
+| -------------------- | ------------------------ | ----------------------------------------------------- |
+| `no-privileged.rego` | `"falco"`                | Required for eBPF security monitoring                 |
 | `no-latest-tag.rego` | `"aquasec/trivy:latest"` | Trivy needs the latest image for current CVE database |
 
-#### Best Practices for Allow-Lists
+### Best Practices for Allow-Lists
 
 1. **Document exceptions** — Add comments explaining why exceptions exist
 2. **Keep the list minimal** — Allow only what's absolutely required
@@ -187,10 +191,12 @@ Below are the descriptions, enforcement details, and exceptions for each policy:
 **Purpose:** Ensures services don't run in privileged mode unless explicitly allowed.
 
 **Enforcement:**
+
 - Denies any service with `privileged: true`
 - Service must not be in the allow-list
 
 **Allow-list:**
+
 - `"falco"` — Required for eBPF probe loading
 
 **Example Violation:** A Compose YAML with `nginx: privileged: true`
@@ -202,6 +208,7 @@ Below are the descriptions, enforcement details, and exceptions for each policy:
 **Purpose:** Prevents containers from using the host network stack for security reasons.
 
 **Enforcement:**
+
 - Denies services with `network_mode: "host"`
 
 **Allow-list:** None
@@ -215,18 +222,22 @@ Below are the descriptions, enforcement details, and exceptions for each policy:
 **Purpose:** Ensures all Docker images use explicit version tags for reproducibility.
 
 **Enforcement:**
+
 1. Denies services with `:latest` tags that aren't in the allow-list
 2. Denies services without any tag (defaults to `:latest`)
 
 **Allow-list:**
+
 - `"aquasec/trivy:latest"` — Trivy needs the latest image for current CVE database
 
 **Examples:**
+
 - `"myapp:latest"` → Violation
 - `"myapp:1.2.3"` → Allowed
 - `"myapp"` → Violation (assumes `:latest`)
 
 **Error Messages:**
+
 - `"Service 'myapp' uses ':latest' tag in image 'myapp:latest' - use explicit version tags"`
 - `"Service 'myapp' uses image 'myapp' without explicit tag (defaults to ':latest')"`
 
@@ -235,17 +246,20 @@ Below are the descriptions, enforcement details, and exceptions for each policy:
 **Purpose:** Prevents containers from running as root user for security.
 
 **Enforcement:**
+
 - Denies services running as root user (`"root"`, `"0"`, or `"0:0"`)
 
 **Allow-list:** None
 
 **Examples:**
+
 - `"user: "root"` → Violation
 - `"user: "0"` → Violation (UID 0)
 - `"user: "0:0"` → Violation (UID 0, GID 0)
 - `"user: "1000:1001"` → Allowed
 
 **Error Messages:**
+
 - `"Service 'app' must not run as root user"`
 - `"Service 'app' must not run as root user (UID 0)"`
 - `"Service 'app' must not run as root user (UID 0:GID 0)"`
@@ -255,16 +269,19 @@ Below are the descriptions, enforcement details, and exceptions for each policy:
 **Purpose:** Ensures services have health checks defined for operational monitoring.
 
 **Enforcement:**
+
 1. Denies services without any `healthcheck` block
 2. Denies healthchecks missing a `test` command
 
-** Allow-list:** None
+**Allow-list:** None
 
 **Examples:**
+
 - No `healthcheck:` block → Violation
 - `healthcheck:` present but no `test:` → Violation
 
 **Error Messages:**
+
 - `"Service 'cache' must define a healthcheck configuration"`
 - `"Service 'cache' healthcheck must specify a 'test' command"`
 
@@ -272,11 +289,11 @@ Below are the descriptions, enforcement details, and exceptions for each policy:
 
 ## 6. Upgrading to OCI Policy Bundle (v0.3)
 
-#### Overview
+### Overview
 
 uFawkesSec v0.3 introduces a new policy distribution pattern using OCI artifacts, replacing the current Git clone approach.
 
-#### Current Pattern (v0.2) - Option A
+### Current Pattern (v0.2) - Option A
 
 ```yaml
 - name: policy-check
@@ -288,16 +305,18 @@ uFawkesSec v0.3 introduces a new policy distribution pattern using OCI artifacts
 ```
 
 **Pros:**
+
 - Simple implementation
 - No artifact publishing required
 - Relies on GitHub availability (~10s additional time)
 
 **Cons:**
+
 - External service dependency
 - Potential rate limiting or downtime impacts
 - Less robust for production CI/CD
 
-#### New Pattern (v0.3) - Option B
+### New Pattern (v0.3) - Option B
 
 ```yaml
 - name: pull-policy-bundle
@@ -312,17 +331,19 @@ uFawkesSec v0.3 introduces a new policy distribution pattern using OCI artifacts
 ```
 
 **Pros:**
+
 - Internal registry control
 - Elimination of GitHub external dependencies
 - More robust and reliable
 - Better caching and layer reuse
 
 **Cons:**
+
 - Requires registry setup
 - Additional pipeline complexity
 - Need for proper access controls
 
-#### Migration Path
+### Migration Path
 
 **Step 1: Build and Push OCI Bundle**
 
@@ -353,14 +374,16 @@ Replace Git clone with OCI pull:
 - Registry access controls ensure only authorized pipelines can retrieve policies
 - Signed policies prevent tampering during CI/CD
 
-#### When to Upgrade
+### When to Upgrade
 
 **Choose Option B (OCI) if:**
+
 - Your organization has an internal registry
 - You need improved reliability over simplicity
 - You're concerned about external service dependencies
 
 **Choose Option A (Git clone) if:**
+
 - Simplicity is preferred
 - You have limited infrastructure setup
 - External service usage is acceptable for this use case
@@ -378,10 +401,11 @@ Replace Git clone with OCI pull:
 
 ## Troubleshooting
 
-#### Common Issues and Solutions
+### Common Issues and Solutions
 
 **Issue: "command not found: conftest"**
 Solution: Verify Conftest is installed in the pipeline image:
+
 ```yaml
 image: openpolicyagent/conftest:v0.57.0
 ```

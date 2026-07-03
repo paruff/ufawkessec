@@ -1,17 +1,23 @@
-Failure: Build & Validate (CI Pipeline stage 3)
-Location: .github/workflows/ci-pipeline.yml line 61: fail-on-latest: true
-This triggers reusable-build.yml@v1.1.0's grep step, which finds
-aquasec/trivy:latest and fails unconditionally.
-Evidence: grep -R "image: .*:latest" -n compose.yaml → 118: image: aquasec/trivy:latest
-::error::Do not use :latest tags in compose.yaml
-Process completed with exit code 1.
-Cascading: Tests SKIPPED, Pipeline Complete FAILED.
-Likely Cause: The design.md §3.2 explicitly specifies aquasec/trivy:latest for trivy-server
-(needs current CVE database). The Rego policy no-latest-tag.rego has an allow-list
-for this image. But the CI build step's fail-on-latest is a blunt grep with no
-exception mechanism — it conflicts with the design and the Rego policy.
+Failure: markdownlint (MD001: heading-increment)
+Location: docs/policy-guide.md
+Evidence: Found 16 instances of `####` headings under `##` sections:
+
+- Line 104: Example Fixture: `compose-clean.yaml`
+- Line 114: Running Policy Tests
+- Line 127: Test Output Interpretation
+- Line 137: Pattern: Allow-List Approach
+- Line 141: Example: Adding "infisical" to no-privileged Policy
+- Line 170: Common Allow-Lists in Current Policies
+- Line 177: Best Practices for Allow-Lists
+- Line 292: Overview
+- Line 296: Current Pattern (v0.2) - Option A
+- Line 319: New Pattern (v0.3) - Option B
+- Line 346: Migration Path
+- Line 377: When to Upgrade
+- Line 404: Common Issues and Solutions
+
+Likely Cause: This is a policy rule (MD001) that requires heading levels to increment by one level only. All `####` headings under `##` sections were incorrectly used instead of `###`.
+
 Confidence: HIGH
-Proposed Fix: Set fail-on-latest: false in ci-pipeline.yml (line 61).
-The Rego policy no-latest-tag.rego already enforces the no-latest-tag rule
-with proper allow-listing. The grep is a redundant, conflicting duplicate
-that should be disabled for this project.
+
+Proposed Fix: Replace all 16 instances of `####` with `###` in docs/policy-guide.md
