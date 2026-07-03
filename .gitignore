@@ -47,4 +47,10 @@ bin/
 # Kubernetes
 .kube.local.yaml
 
+# Agent artifacts
+ci-diagnosis.md
+ci-fix-report.md
+.agents/
+tasks-*.json
+
 # Secrets baseline (generated, not edited)
