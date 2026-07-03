@@ -65,14 +65,14 @@ openssl rand -hex 32   # for encryption keys
 
 **Required variables:**
 
-| Variable                    | Used by    | Generate with          |
-| --------------------------- | ---------- | ---------------------- |
-| `DEFECTDOJO_SECRET_KEY`     | DefectDojo | `openssl rand -hex 64` |
-| `DEFECTDOJO_AES_KEY`        | DefectDojo | `openssl rand -hex 32` |
-| `DOJO_DB_PASSWORD`          | DefectDojo | choose strong password |
-| `INFISICAL_ENCRYPTION_KEY`  | Infisical  | `openssl rand -hex 32` |
-| `INFISICAL_AUTH_SECRET`     | Infisical  | `openssl rand -hex 64` |
-| `INFISICAL_DB_PASSWORD`     | Infisical  | choose strong password |
+| Variable                   | Used by    | Generate with          |
+| -------------------------- | ---------- | ---------------------- |
+| `DEFECTDOJO_SECRET_KEY`    | DefectDojo | `openssl rand -hex 64` |
+| `DEFECTDOJO_AES_KEY`       | DefectDojo | `openssl rand -hex 32` |
+| `DOJO_DB_PASSWORD`         | DefectDojo | choose strong password |
+| `INFISICAL_ENCRYPTION_KEY` | Infisical  | `openssl rand -hex 32` |
+| `INFISICAL_AUTH_SECRET`    | Infisical  | `openssl rand -hex 64` |
+| `INFISICAL_DB_PASSWORD`    | Infisical  | choose strong password |
 
 ### 2. Create the Network
 
@@ -116,16 +116,17 @@ make migrate
 ```
 
 This runs:
+
 1. `docker compose exec defectdojo python manage.py migrate`
 2. `docker compose exec defectdojo python manage.py createsuperuser --noinput`
 
 The following environment variables must be set before running `make migrate`:
 
-| Variable                     | Purpose               |
-| ---------------------------- | --------------------- |
-| `DJANGO_SUPERUSER_USERNAME`  | Superuser login name  |
-| `DJANGO_SUPERUSER_PASSWORD`  | Superuser password    |
-| `DJANGO_SUPERUSER_EMAIL`     | Superuser email       |
+| Variable                    | Purpose              |
+| --------------------------- | -------------------- |
+| `DJANGO_SUPERUSER_USERNAME` | Superuser login name |
+| `DJANGO_SUPERUSER_PASSWORD` | Superuser password   |
+| `DJANGO_SUPERUSER_EMAIL`    | Superuser email      |
 
 Add these to your `.env` file.
 
@@ -218,6 +219,7 @@ could not connect to server`.
 `fawkes-net`.
 
 **Fix:**
+
 1. Verify ufawkesRes is up: `docker compose -f <ufawkesres-path>/compose.yaml ps`
 2. Verify PostgreSQL is on `fawkes-net`:
    ```bash
@@ -249,6 +251,7 @@ on `make network` but must be run as a single `make up` call — running
 **Cause:** Valkey from ufawkesRes is not running or not on `fawkes-net`.
 
 **Fix:** Ensure ufawkesRes is running and Valkey is on `fawkes-net`:
+
 ```bash
 docker network inspect fawkes-net | grep valkey
 docker ps --filter name=valkey
@@ -269,11 +272,11 @@ docker ps --filter name=valkey
 
 ## Reference
 
-| File                               | Purpose                                       |
-| ---------------------------------- | --------------------------------------------- |
-| `compose.yaml`                     | Suite-aware compose (requires uFawkesRes)     |
-| `compose-standalone.yaml`          | Standalone compose (embedded DB and cache)    |
-| `config/defectdojo/.env.example`   | DefectDojo env var template                   |
-| `config/infisical/.env.example`    | Infisical env var template                    |
-| `Makefile`                         | `make up`, `make down`, `make network`, etc.  |
-| `policy/*.rego`                    | Rego security policies for compose validation |
+| File                             | Purpose                                       |
+| -------------------------------- | --------------------------------------------- |
+| `compose.yaml`                   | Suite-aware compose (requires uFawkesRes)     |
+| `compose-standalone.yaml`        | Standalone compose (embedded DB and cache)    |
+| `config/defectdojo/.env.example` | DefectDojo env var template                   |
+| `config/infisical/.env.example`  | Infisical env var template                    |
+| `Makefile`                       | `make up`, `make down`, `make network`, etc.  |
+| `policy/*.rego`                  | Rego security policies for compose validation |
