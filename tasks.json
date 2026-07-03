@@ -1,0 +1,57 @@
+{
+  "feature": "SEC-005",
+  "description": "Extend Makefile with up, down, network, migrate, cosign-keygen, and log targets",
+  "tasks": [
+    {
+      "id": "1",
+      "name": "Add network target",
+      "description": "Create fawkes-net idempotently (docker network create fawkes-net || true)",
+      "acceptance": "make network succeeds on first run; make network succeeds on second run (already exists, no error)"
+    },
+    {
+      "id": "2",
+      "name": "Add up target",
+      "description": "Call make network then docker compose up -d; print DefectDojo and Infisical URLs",
+      "acceptance": "make up starts containers and prints http://localhost:8080, http://localhost:8082",
+      "depends_on": ["1"]
+    },
+    {
+      "id": "3",
+      "name": "Add down target",
+      "description": "docker compose down to stop all services",
+      "acceptance": "make down stops all ufawkessec containers cleanly"
+    },
+    {
+      "id": "4",
+      "name": "Add migrate target",
+      "description": "Run docker compose exec defectdojo python manage.py migrate and createsuperuser --noinput; document required env vars",
+      "acceptance": "make migrate runs both commands; help text documents DJANGO_SUPERUSER_USERNAME, DJANGO_SUPERUSER_PASSWORD, DJANGO_SUPERUSER_EMAIL",
+      "depends_on": ["2"]
+    },
+    {
+      "id": "5",
+      "name": "Add cosign-keygen target",
+      "description": "Generate cosign key pair, print instructions for storing private key, delete cosign.key from disk",
+      "acceptance": "make cosign-keygen creates cosign.key and cosign.pub, prints Woodpecker secret instructions, removes cosign.key; cosign.key absent after completion"
+    },
+    {
+      "id": "6",
+      "name": "Add logs-defectdojo target",
+      "description": "Tail logs for defectdojo and defectdojo-nginx containers",
+      "acceptance": "make logs-defectdojo runs docker compose logs -f defectdojo defectdojo-nginx"
+    },
+    {
+      "id": "7",
+      "name": "Add logs-falco target",
+      "description": "Tail logs for falco container",
+      "acceptance": "make logs-falco runs docker compose logs -f falco"
+    },
+    {
+      "id": "8",
+      "name": "Update help output",
+      "description": "Document all new targets in the make help section",
+      "acceptance": "make help shows network, up, down, migrate, cosign-keygen, logs-defectdojo, logs-falco with descriptions",
+      "depends_on": ["1", "2", "3", "4", "5", "6", "7"]
+    }
+  ]
+}
