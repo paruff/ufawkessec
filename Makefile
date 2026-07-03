@@ -1,7 +1,50 @@
-.PHONY: help test test-unit validate pre-commit-setup pre-commit-run clean
+.PHONY: help test test-unit validate pre-commit-setup pre-commit-run clean \
+        network up down migrate cosign-keygen logs-defectdojo logs-falco
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+# ============================================================================
+# Stack Lifecycle
+# ============================================================================
+
+network: ## Create fawkes-net if it does not exist
+	docker network create fawkes-net || true
+
+up: network ## Start uFawkesSec stack (requires uFawkesRes running)
+	docker compose up -d
+	@echo ""
+	@echo "DefectDojo: http://localhost:8080"
+	@echo "Infisical:  http://localhost:8082"
+
+down: ## Stop uFawkesSec stack
+	docker compose down
+
+migrate: ## Run DefectDojo database migration and create superuser
+	@echo "Running DefectDojo database migration..."
+	docker compose exec defectdojo python manage.py migrate
+	@echo "Creating DefectDojo superuser..."
+	docker compose exec defectdojo python manage.py createsuperuser --noinput
+	@echo "✅ DefectDojo migration complete"
+	@echo ""
+	@echo "Required env vars (must be set before make migrate):"
+	@echo "  DJANGO_SUPERUSER_USERNAME"
+	@echo "  DJANGO_SUPERUSER_PASSWORD"
+	@echo "  DJANGO_SUPERUSER_EMAIL"
+
+cosign-keygen: ## Generate Cosign key pair (run once; store private key in Woodpecker secret)
+	cosign generate-key-pair
+	@echo ""
+	@echo "Store cosign.key in Woodpecker secret 'cosign_private_key'"
+	@echo "Commit cosign.pub to the repo"
+	@rm -f cosign.key
+	@echo "✅ cosign.key removed from disk (private key only in Woodpecker)"
+
+logs-defectdojo: ## Tail DefectDojo logs
+	docker compose logs -f defectdojo defectdojo-nginx
+
+logs-falco: ## Tail Falco security events
+	docker compose logs -f falco
 
 # ============================================================================
 # Test Commands
