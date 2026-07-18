@@ -20,6 +20,9 @@ jobs:
       contents: read
       pull-requests: write
     steps:
+      - name: job-start
+        run: echo "job-start:$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
       - name: Checkout code
         uses: actions/checkout@v7
         with:
@@ -43,3 +46,7 @@ jobs:
 
       - name: Run pre-commit hooks
         run: pre-commit run --all-files
+
+      - name: job-finish
+        if: always()
+        run: echo "job-finish:$(date -u +%Y-%m-%dT%H:%M:%SZ)"

@@ -1,0 +1,14 @@
+name: Main CI Guard
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check-main-ci:
+    name: "🛡️ Main CI Health"
+    uses: paruff/ufawkespipe/.github/workflows/reusable-main-ci-guard.yml@v1.2.0
+    with:
+      workflow-id: ci-pipeline.yml
+      workflow-name: "CI Pipeline"
