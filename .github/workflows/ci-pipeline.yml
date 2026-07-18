@@ -32,7 +32,7 @@ jobs:
   security:
     name: Security Scanning
     needs: [lint]
-    uses: paruff/ufawkespipe/.github/workflows/reusable-security-scanning.yml@v1.1.0
+    uses: paruff/ufawkespipe/.github/workflows/reusable-security-scanning.yml@v1.1.1
     with:
       scan-type: all
       severity-threshold: MEDIUM
