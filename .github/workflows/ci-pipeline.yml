@@ -80,6 +80,9 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     steps:
+      - name: job-start
+        run: echo "job-start:$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
       - name: Check results
         run: |
           echo "=== Pipeline Results ==="
@@ -104,8 +107,8 @@ jobs:
           echo ""
           echo "✅ Pipeline PASSED"
 
-      - name: DORA pipeline finish
+      - name: job-finish
         if: always()
         run: |
-          echo "pipeline-finish:$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "job-finish:$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           echo "pipeline-result:${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}"
